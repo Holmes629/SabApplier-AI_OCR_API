@@ -1,0 +1,6 @@
+flask
+paddleocr
+paddlepaddle
+opencv-python
+pillow
+PyMuPDF
