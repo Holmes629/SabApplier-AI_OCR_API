@@ -1,18 +1,17 @@
+import os
 import numpy as np
 import cv2
-from PIL import Image
+import fitz  # PyMuPDF
 from flask import Flask, request, jsonify
+from paddleocr import PaddleOCR
 from werkzeug.utils import secure_filename
-import easyocr
 
 app = Flask(__name__)
 
-# Initialize EasyOCR reader once
-reader = easyocr.Reader(['en'], gpu=False)
+ocr = PaddleOCR(use_angle_cls=True, lang='en')  # Using default model to save memory
 
 @app.route("/ocr", methods=["POST"])
 def get_ocr_data():
-    print('inside ocr api')
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
@@ -22,20 +21,27 @@ def get_ocr_data():
     text_output = ""
 
     try:
-        img = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
-        if img is None:
-            return jsonify({"error": "Failed to decode image."}), 400
-
-        # Convert to RGB and run OCR
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        results = reader.readtext(img_rgb)
-
-        text_output = " ".join([res[1] for res in results])
-
+        if filename.lower().endswith(".pdf"):
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                pix = page.get_pixmap(dpi=200)
+                img = np.frombuffer(pix.tobytes(), dtype=np.uint8)
+                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
+                if img is not None:
+                    result = ocr.ocr(img, cls=True)
+                    for line in result[0]:
+                        text_output += line[1][0] + " "
+        else:
+            img = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
+            if img is None:
+                return jsonify({"error": "Failed to decode image."}), 400
+            result = ocr.ocr(img, cls=True)
+            text_output = " ".join([line[1][0] for line in result[0]])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
     return jsonify({"text": text_output.strip()})
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000, host="0.0.0.0")
+    app.run(debug=False, port=os.getenv("PORT", 5000), host="0.0.0.0")
