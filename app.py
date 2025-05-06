@@ -1,49 +1,37 @@
-import os
-import numpy as np
-import cv2
-import fitz  # PyMuPDF
 from flask import Flask, request, jsonify
-from easyocr import Reader
-from werkzeug.utils import secure_filename
+from PIL import Image
+import pytesseract
+import io
+import tempfile
+from pdf2image import convert_from_bytes
 
 app = Flask(__name__)
 
-# Initialize EasyOCR with English language
-ocr_reader = Reader(['en'], gpu=True)
-
-@app.route("/ocr", methods=["POST"])
-def get_ocr_data():
-    print('inside get ocr api func...')
+@app.route('/ocr', methods=['POST'])
+def ocr():
     if 'file' not in request.files:
-        return jsonify({"error": "No file uploaded"}), 400
+        return jsonify({'error': 'No file uploaded'}), 400
 
     uploaded_file = request.files['file']
-    filename = secure_filename(uploaded_file.filename)
+    filename = uploaded_file.filename.lower()
     file_bytes = uploaded_file.read()
+
     text_output = ""
 
     try:
-        if filename.lower().endswith(".pdf"):
-            doc = fitz.open(stream=file_bytes, filetype="pdf")
-            for page_num in range(len(doc)):
-                page = doc.load_page(page_num)
-                pix = page.get_pixmap(dpi=200)
-                img = np.frombuffer(pix.tobytes(), dtype=np.uint8)
-                img = cv2.imdecode(img, cv2.IMREAD_COLOR)
-                if img is not None:
-                    results = ocr_reader.readtext(img)
-                    for line in results:
-                        text_output += line[1] + " "
+        if filename.endswith('.pdf'):
+            # Convert PDF to list of images (one per page)
+            images = convert_from_bytes(file_bytes)
+            for image in images:
+                text_output += pytesseract.image_to_string(image) + "\n"
         else:
-            img = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
-            if img is None:
-                return jsonify({"error": "Failed to decode image."}), 400
-            results = ocr_reader.readtext(img)
-            text_output = " ".join([line[1] for line in results])
+            # Handle normal image files
+            image = Image.open(io.BytesIO(file_bytes))
+            text_output = pytesseract.image_to_string(image)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({'error': str(e)}), 500
 
-    return jsonify({"text": text_output.strip()})
+    return jsonify({'text': text_output.strip()})
 
 if __name__ == "__main__":
-    app.run(debug=False, port=os.getenv("PORT", 5000), host="0.0.0.0")
+    app.run(host="0.0.0.0", port=5000)
