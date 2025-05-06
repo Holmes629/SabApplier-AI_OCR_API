@@ -3,12 +3,13 @@ import numpy as np
 import cv2
 import fitz  # PyMuPDF
 from flask import Flask, request, jsonify
-from paddleocr import PaddleOCR
+from easyocr import Reader
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-ocr = PaddleOCR(use_angle_cls=True, lang='en')  # Using default model to save memory
+# Initialize EasyOCR with English language
+ocr_reader = Reader(['en'], gpu=False)
 
 @app.route("/ocr", methods=["POST"])
 def get_ocr_data():
@@ -30,15 +31,15 @@ def get_ocr_data():
                 img = np.frombuffer(pix.tobytes(), dtype=np.uint8)
                 img = cv2.imdecode(img, cv2.IMREAD_COLOR)
                 if img is not None:
-                    result = ocr.ocr(img, cls=True)
-                    for line in result[0]:
-                        text_output += line[1][0] + " "
+                    results = ocr_reader.readtext(img)
+                    for line in results:
+                        text_output += line[1] + " "
         else:
             img = cv2.imdecode(np.frombuffer(file_bytes, np.uint8), cv2.IMREAD_COLOR)
             if img is None:
                 return jsonify({"error": "Failed to decode image."}), 400
-            result = ocr.ocr(img, cls=True)
-            text_output = " ".join([line[1][0] for line in result[0]])
+            results = ocr_reader.readtext(img)
+            text_output = " ".join([line[1] for line in results])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
