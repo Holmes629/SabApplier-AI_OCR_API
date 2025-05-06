@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 
 # Initialize EasyOCR with English language
-ocr_reader = Reader(['en'], gpu=False)
+ocr_reader = Reader(['en'])
 
 @app.route("/ocr", methods=["POST"])
 def get_ocr_data():
