@@ -1,7 +1,7 @@
-# Use an official Python image
+# Use Python slim image (includes pip and works with PaddleOCR)
 FROM python:3.10-slim
 
-# Install required system packages
+# Install required system packages for OCR + OpenCV
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libgl1-mesa-glx \
@@ -12,18 +12,18 @@ RUN apt-get update && apt-get install -y \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
+# Set working directory inside container
 WORKDIR /app
 
-# Copy files into the container
+# Copy all files into container
 COPY . .
 
 # Install Python dependencies
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Expose the port your Flask app runs on
+# Expose Flask port
 EXPOSE 5000
 
-# Run the app
+# Run your Flask app
 CMD ["python", "app.py"]
