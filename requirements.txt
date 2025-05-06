@@ -1,5 +1,3 @@
 flask
-easyocr
+pytesseract
 pillow
-opencv-python
-pymupdf
