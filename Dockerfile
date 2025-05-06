@@ -1,29 +1,25 @@
-# Use Python slim image (includes pip and works with PaddleOCR)
 FROM python:3.10-slim
 
-# Install required system packages for OCR + OpenCV
+# Install Tesseract and other dependencies
 RUN apt-get update && apt-get install -y \
+    tesseract-ocr \
     libglib2.0-0 \
-    libgl1-mesa-glx \
     libsm6 \
+    libxrender1 \
     libxext6 \
-    libxrender-dev \
-    build-essential \
-    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy all files into container
+# Copy project files
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . .
 
-# Install Python dependencies
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
-
-# Expose Flask port
+# Expose port
 EXPOSE 5000
 
-# Run your Flask app
+# Start the app
 CMD ["python", "app.py"]
