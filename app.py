@@ -4,8 +4,6 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-ocr = PaddleOCR(use_angle_cls=True, lang='en')  # Using default model to save memory
-
 @app.route("/ocr", methods=["POST", "GET"])
 def get_ocr_data():
     print('inside get ocr api func...')
