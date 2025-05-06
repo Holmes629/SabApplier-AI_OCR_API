@@ -12,6 +12,7 @@ reader = easyocr.Reader(['en'], gpu=False)
 
 @app.route("/ocr", methods=["POST"])
 def get_ocr_data():
+    print('inside ocr api')
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
