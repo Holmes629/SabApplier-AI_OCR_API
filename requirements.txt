@@ -1,6 +1,6 @@
 flask
 paddleocr
 paddlepaddle
+pillow
 opencv-python
-PyMuPDF
-werkzeug
+pymupdf
