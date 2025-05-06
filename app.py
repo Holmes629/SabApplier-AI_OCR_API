@@ -12,6 +12,7 @@ ocr = PaddleOCR(use_angle_cls=True, lang='en')  # Using default model to save me
 
 @app.route("/ocr", methods=["POST"])
 def get_ocr_data():
+    print('inside get ocr api func...')
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
 
