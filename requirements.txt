@@ -1,6 +1,5 @@
 flask
-paddleocr
-paddlepaddle
+easyocr
 pillow
 opencv-python
 pymupdf
