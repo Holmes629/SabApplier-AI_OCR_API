@@ -1,6 +1,4 @@
 flask
-paddleocr
-paddlepaddle
-opencv-python
-pillow
-PyMuPDF
+easyocr
+opencv-python-headless
+Pillow
